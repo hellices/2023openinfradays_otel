@@ -1,0 +1,52 @@
+spring:
+  profiles:
+    active:
+      - local
+
+logging:
+  pattern:
+    level: trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p
+---
+
+spring:
+  config:
+    activate:
+      on-profile: local
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+server:
+  port: 8081
+
+## Default configurations
+otel:
+  traces:
+    sampler:
+      probability: 1
+  springboot:
+    web:
+      enabled: true
+    httpclients:
+      enabled: true
+    aspects:
+      enabled: true
+
+logging:
+  pattern:
+    level: trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: server
+  data:
+    redis:
+      host: redis-stack-server
+      port: 6379
+
+server:
+  port: 8081

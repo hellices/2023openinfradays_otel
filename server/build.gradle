@@ -1,0 +1,68 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.1.0'
+	id 'io.spring.dependency-management' version '1.1.0'
+    id 'com.google.cloud.tools.jib' version '3.2.1'
+}
+ext {
+  redisOmVersion = '0.8.3-SNAPSHOT'
+}
+group = 'com.otel'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+    maven {
+        url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+    }
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	implementation "com.redis.om:redis-om-spring:$redisOmVersion"
+	annotationProcessor "com.redis.om:redis-om-spring:$redisOmVersion"
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+
+jib {
+    from {
+        image = "registry.access.redhat.com/ubi8/openjdk-17:1.16-1"
+    }
+    to {
+        image = "spring-server"
+    }
+    container {
+		creationTime = "USE_CURRENT_TIMESTAMP" 
+		environment = [OTEL_TRACES_EXPORTER:"otlp,logging",OTEL_METRICS_EXPORTER:"prometheus",OTEL_RESOURCE_ATTRIBUTES:"app=sprng-server",OTEL_METRICS_EXEMPLAR_FILTER:"ALWAYS_ON",OTEL_SERVICE_NAME:"sprng-server",OTEL_EXPORTER_OTLP_ENDPOINT:"http://tempo:4317"]
+        jvmFlags = [
+			'-Dlogging.pattern.level=trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p',
+			'-Dspring.profiles.active=server',
+			'-XX:+UseContainerSupport', 
+			'-javaagent:/opentelemetry-javaagent.jar',
+			'-Dfile.encoding=UTF-8']
+			
+        ports = ['8080']
+        labels = [maintainer: "hih<hih@shinhan.com>"]
+    }
+	extraDirectories {
+    	paths {
+      		path {
+        		// copies the contents of 'otel' into '/' on the container
+        		from = file('otel')
+			}
+		}
+	}
+}
