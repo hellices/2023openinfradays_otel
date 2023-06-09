@@ -1,0 +1,26 @@
+spring:
+  profiles:
+    active:
+      - local
+
+logging:
+  pattern:
+    level: trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: local
+spring-server:
+  domain: http://localhost:8081
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: server
+spring-server:
+  domain: http://spring-server-entrypoint:8081

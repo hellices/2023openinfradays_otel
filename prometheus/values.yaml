@@ -1,3 +1,7 @@
+server:
+  extraFlags:
+    - web.enable-lifecycle
+    - enable-feature=exemplar-storage
 # adds additional scrape configs to prometheus.yml
 # must be a string so you have to add a | after extraScrapeConfigs:
 # example adds prometheus-blackbox-exporter scrape config

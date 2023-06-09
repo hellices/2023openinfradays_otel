@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-client
+  namespace: metric
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-client
+  template:
+    metadata:
+      labels:
+        app: spring-client
+    spec:
+      containers:
+      - name: spring-client
+        image: spring-client:latest
+        imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-client-entrypoint
+  namespace: metric
+spec:
+  type: ClusterIP
+  selector:
+    app: spring-client
+  ports:
+  - port: 8080
+    name: app
+    targetPort: 8080
+  - port: 9464
+    name: metric
+    targetPort: 9464
+

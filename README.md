@@ -58,8 +58,12 @@ helm upgrade -i  tempo grafana/tempo -n metric
 
 ```
 helm upgrade -i redis-stack-server -f ./redis-stack-server/values.yaml ./redis-stack-server -n metric
-(sudo) ./server/gradlew jibDockerBuild
-kubectl apply -f ./server/kube.yaml
+cd server
+(sudo) ./gradlew jibDockerBuild
+kubectl apply -f ./kube.yaml
+cd ../client
+(sudo) ./gradlew jibDockerBuild
+kubectl apply -f ./kube.yaml
 ```
 
 > redis stack server: database 역할.
