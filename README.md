@@ -3,7 +3,7 @@
 - 구성에 대하여 문의는 이슈를 통해 주시면 최대한 답변드리겠습니다.
 
 ## Opentelemetry와  Grafana, prometheus 등을 활용한 대시보드 구성
-<img src="./static/otel.svg" alt="" >   
+<img src="./static/otel.drawio.svg" alt="" >   
 
 - server, client 두 개의 서비스를 기동하여 서비스 간 통신을 그라파나 대시보드를 통해 모니터링/디버깅하는 예제를 구성해 볼 수 있습니다.
 - 두 서버는 각각 opentelemetry instrument sdk를 javaagent에 설정하여 기동합니다.
@@ -53,7 +53,7 @@ helm upgrade -i prometheus prometheus-community/prometheus -f ./prometheus/value
 helm upgrade -i  grafana grafana/grafana -n metric
 helm upgrade -i  -f loki/values.yaml loki grafana/loki -n metric
 helm upgrade -i  promtail grafana/protail -n metric
-helm upgrade -i  tempo grafana/tempo -n metric
+helm upgrade -i  -f tempo/values.yaml tempo grafana/tempo -n metric
 
 ```
 > prometheus : cpu, memory 데이터 수집 + server_http_duration_bucket 과 exemplars 로 지연 api 확인 **metric 저장소**   
@@ -100,6 +100,22 @@ kubectl get secret --namespace metric grafana -o jsonpath="{.data.admin-password
 kubectl port-forward svc/grafana 7777:80 -n metric
 ```
 
-> http://localhost:7777 에 접속한다. 
-> ID : admin / password : 위에서 확인
-> connections > data sources > Loki, Prometheus, Tempo를 각각 설정
+> http://localhost:7777 에 접속한다.   
+> ID : admin / password : 위에서 확인   
+> connections > data sources > Loki, Prometheus, Tempo를 각각 설정   
+
+### 06. datasource configuration
+
+- loki -> url(http://loki:3100)   
+- Derived fields에 아래와 같이 입력   
+<img src="./static/loki.png">   
+
+- tempo -> url(http://tempo:3100)   
+
+- prometheus -> url(http://prometheus-server)   
+- Exemplars -> tempo 추가   
+<img src="./static/prometheus.png">   
+
+### 07. dashboard import
+- grafana -> dashboards -> new -> import
+- ./grafana/dashboard.json add

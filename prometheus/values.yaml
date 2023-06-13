@@ -1,5 +1,6 @@
 server:
   extraFlags:
+    - web.enable-remote-write-receiver
     - web.enable-lifecycle
     - enable-feature=exemplar-storage
 # adds additional scrape configs to prometheus.yml
@@ -10,7 +11,7 @@ extraScrapeConfigs: |
     metrics_path: '/'
     scrape_interval: 5s
     static_configs:
-    - targets: ['spring-server-entrypoint:9464','spring-client-entrypoint:9464']
+    - targets: ['spring-server:9464','spring-client:9464']
   # - job_name: 'prometheus-blackbox-exporter'
   #   metrics_path: /probe
   #   params:

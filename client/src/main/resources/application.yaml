@@ -23,4 +23,4 @@ spring:
     activate:
       on-profile: server
 spring-server:
-  domain: http://spring-server-entrypoint:8081
+  domain: http://spring-server:8081

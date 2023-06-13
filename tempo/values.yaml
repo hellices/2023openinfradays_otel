@@ -1,0 +1,5 @@
+tempo:
+  metricsGenerator:
+    # -- If true, enables Tempo's metrics generator (https://grafana.com/docs/tempo/next/metrics-generator/)
+    enabled: true
+    remoteWriteUrl: "http://prometheus-server/api/v1/write"
