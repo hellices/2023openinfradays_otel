@@ -12,6 +12,12 @@ extraScrapeConfigs: |
     scrape_interval: 5s
     static_configs:
     - targets: ['spring-server:9464','spring-client:9464']
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: '(.*):(.*)'
+      replacement: '${1}'
+      target_label: app
+      
   # - job_name: 'prometheus-blackbox-exporter'
   #   metrics_path: /probe
   #   params:

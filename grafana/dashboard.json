@@ -46,6 +46,12 @@
       "version": "9.5.2"
     },
     {
+      "type": "panel",
+      "id": "logs",
+      "name": "Logs",
+      "version": ""
+    },
+    {
       "type": "datasource",
       "id": "loki",
       "name": "Loki",
@@ -62,12 +68,6 @@
       "id": "prometheus",
       "name": "Prometheus",
       "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
     },
     {
       "type": "datasource",
@@ -394,7 +394,7 @@
           },
           "editorMode": "builder",
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum by(le, http_status_code) (rate(http_server_duration_bucket{app=~\"$app\"}[5m])))",
+          "expr": "histogram_quantile(0.9, sum by(le, http_status_code) (rate(http_server_duration_bucket{app=~\"$app\"}[1m])))",
           "range": true,
           "refId": "A"
         }
@@ -763,7 +763,7 @@
       "type": "nodeGraph"
     },
     {
-      "collapsed": false,
+      "collapsed": true,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -771,167 +771,47 @@
         "y": 28
       },
       "id": 9,
-      "panels": [],
-      "title": "Log Analysis & Debug",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "color-text"
-            },
-            "filterable": true,
-            "inspect": true
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "시간"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 172
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "호스트"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 99
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "APP"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 43
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 29
-      },
-      "id": 19,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "enablePagination": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "frameIndex": 0,
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "시간"
-          }
-        ]
-      },
-      "pluginVersion": "9.5.2",
-      "targets": [
+      "panels": [
         {
-          "alias": "",
-          "bucketAggs": [],
           "datasource": {
             "type": "loki",
             "uid": "${DS_LOKI}"
           },
-          "editorMode": "builder",
-          "expr": "{app=\"$app\"} |= ``",
-          "metrics": [
+          "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 29
+          },
+          "id": 29,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": false,
+            "sortOrder": "Descending",
+            "wrapLogMessage": false
+          },
+          "targets": [
             {
-              "id": "1",
-              "settings": {
-                "size": "100"
+              "datasource": {
+                "type": "loki",
+                "uid": "${DS_LOKI}"
               },
-              "type": "raw_data"
+              "editorMode": "builder",
+              "expr": "{app=~\"$app\"} |= `$search`",
+              "queryType": "range",
+              "refId": "A"
             }
           ],
-          "query": "fields.type : \"jeus\"",
-          "queryType": "range",
-          "refId": "A",
-          "timeField": "@timestamp"
+          "title": "Log per app",
+          "type": "logs"
         }
       ],
-      "title": "LOG",
-      "transformations": [
-        {
-          "id": "filterFieldsByName",
-          "options": {
-            "include": {
-              "names": [
-                "fields.type",
-                "message",
-                "@timestamp",
-                "agent.hostname"
-              ]
-            }
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "@timestamp": "시간",
-              "agent.hostname": "호스트",
-              "fields.type": "APP",
-              "message": "로그"
-            }
-          }
-        }
-      ],
-      "transparent": true,
-      "type": "table"
+      "title": "Log Analysis & Debug",
+      "type": "row"
     }
   ],
   "refresh": "5s",
@@ -969,6 +849,27 @@
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "get",
+          "value": "get"
+        },
+        "description": "search log",
+        "hide": 0,
+        "label": "search log",
+        "name": "search",
+        "options": [
+          {
+            "selected": true,
+            "text": "get",
+            "value": "get"
+          }
+        ],
+        "query": "get",
+        "skipUrlSync": false,
+        "type": "textbox"
       }
     ]
   },
@@ -982,6 +883,6 @@
   "timezone": "",
   "title": "Opentelemetry Application APM",
   "uid": "54mJ9JUVk",
-  "version": 4,
+  "version": 6,
   "weekStart": ""
 }

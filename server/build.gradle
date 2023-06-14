@@ -4,9 +4,6 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.0'
     id 'com.google.cloud.tools.jib' version '3.2.1'
 }
-ext {
-  redisOmVersion = '0.8.3-SNAPSHOT'
-}
 group = 'com.otel'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '17'
@@ -28,8 +25,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
-	implementation "com.redis.om:redis-om-spring:$redisOmVersion"
-	annotationProcessor "com.redis.om:redis-om-spring:$redisOmVersion"
+	runtimeOnly 'com.h2database:h2'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 }
 
 tasks.named('test') {
@@ -49,7 +46,6 @@ jib {
 		environment = [OTEL_TRACES_EXPORTER:"otlp,logging",OTEL_METRICS_EXPORTER:"prometheus",OTEL_RESOURCE_ATTRIBUTES:"app=sprng-server",OTEL_METRICS_EXEMPLAR_FILTER:"ALWAYS_ON",OTEL_SERVICE_NAME:"sprng-server",OTEL_EXPORTER_OTLP_ENDPOINT:"http://tempo:4317"]
         jvmFlags = [
 			'-Dlogging.pattern.level=trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p',
-			'-Dspring.profiles.active=server',
 			'-XX:+UseContainerSupport', 
 			'-javaagent:/opentelemetry-javaagent.jar',
 			'-Dfile.encoding=UTF-8']

@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.otel.server.document.domain.Company;
-import com.otel.server.document.repository.CompanyRepository;
+import com.otel.server.domain.Company;
+import com.otel.server.repository.CompanyRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class CompanyController {
     public Optional<Company> getCompanyDelayReturn(@RequestParam("name") final String name)
             throws InterruptedException {
         Thread.sleep(5000);
-        return repository.findOneByName(name);
+        return repository.findOneByNameContainsIgnoreCase(name);
     }
 
 }

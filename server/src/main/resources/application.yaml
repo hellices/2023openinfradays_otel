@@ -1,24 +1,22 @@
-spring:
-  profiles:
-    active:
-      - local
-
 logging:
   pattern:
     level: trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p
----
-
 spring:
-  config:
-    activate:
-      on-profile: local
-  data:
-    redis:
-      host: localhost
-      port: 6379
-
-server:
-  port: 8081
+  datasource:
+    url: jdbc:h2:mem:test
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    generate-ddl: true
+    show-sql: true
+    database: h2
+    database-platform: org.hibernate.dialect.H2Dialect
 
 ## Default configurations
 otel:
@@ -32,17 +30,5 @@ otel:
       enabled: true
     aspects:
       enabled: true
-
----
-
-spring:
-  config:
-    activate:
-      on-profile: server
-  data:
-    redis:
-      host: redis-stack-server
-      port: 6379
-
 server:
   port: 8081
