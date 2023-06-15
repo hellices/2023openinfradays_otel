@@ -1,0 +1,18 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: sample-instrumentation
+  namespace: metric
+spec:
+  exporter:
+    endpoint: http://tempo:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"
+  java:
+    env:
+      - name: OTEL_METRICS_EXPORTER
+        value: prometheus

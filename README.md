@@ -6,22 +6,22 @@
 <img src="./static/otel.drawio.svg" alt="" >   
 
 - server, client 두 개의 서비스를 기동하여 서비스 간 통신을 그라파나 대시보드를 통해 모니터링/디버깅하는 예제를 구성해 볼 수 있습니다.
-- 두 서버는 각각 opentelemetry instrument sdk를 javaagent에 설정하여 기동합니다.
+- 두 서버는 각각 [opentelemetry instrument](https://opentelemetry.io/docs/instrumentation/) sdk를 javaagent에 설정하여 기동합니다.
 - opentelemetry sdk(.jar)는 다음과 같은 역할을 수행합니다.
 1. metric을 노출시켜 prometheus에서 scraping 가능하도록 합니다.
 2. log 내에 trace_id를 보내줍니다.(java mdc - mapped diagnostic context 활용)
 3. trace정보를 수집 가능한 서버로 전송합니다. 
 
 ### 00. 프로젝트 구성
-| path  |  용도    |
-|-------|---------|
-| /client| client application 빌드용 |
-| /server| server application 빌드용 |
-| /grafana| 대시보드 템플릿 |
-| /server| server application 빌드용 |
-| /loki| loki helm chart value |
+| path       |  용도    |
+|------------|---------|
+| /client    | client application 빌드용 |
+| /grafana   | 대시보드 템플릿 |
+| /loki      | loki helm chart value |
+| /otel      | opentelemetry autoinstrumentation을 위한 custom resource definition |
 | /prometheus| prometheus helm chart value |
-| /redis-stack-server| redis stack server 배포용 helm chart(official helm chart 없음) |
+| /server    | server application 빌드용 |
+| /tempo     | tempo helm chart value |
 
 ### 01. pre-req. 각주 참고하여 설치
 - kubernetes[^kubernetes]   * [참고](/static/img_01.png)
@@ -52,7 +52,7 @@ kubectl create namespace metric
 helm upgrade -i prometheus prometheus-community/prometheus -f ./prometheus/values.yaml -n metric
 helm upgrade -i  grafana grafana/grafana -n metric
 helm upgrade -i  -f loki/values.yaml loki grafana/loki -n metric
-helm upgrade -i  promtail grafana/protail -n metric
+helm upgrade -i  promtail grafana/promtail -n metric
 helm upgrade -i  -f tempo/values.yaml tempo grafana/tempo -n metric
 
 ```
@@ -63,17 +63,34 @@ helm upgrade -i  -f tempo/values.yaml tempo grafana/tempo -n metric
 
 ### 03. application deploy
 
-- [redis stack server](https://redis.io/docs/stack/get-started/install/docker/): database 역할.
 - server, client application은 아래와 같이 커맨드라인으로 빌드하거나 vs code에서 gradle extension을 설치해서 빌드한다.
+- database(h2)는 server와 같이 기동되며 인메모리로 실행
 - vs code -> extension -> [gradle for java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-gradle) 설치
 - [jib 빌드](https://github.com/GoogleContainerTools/jib)는 링크를 참고
 
+- server 는 [otel Autoinstrumentation](https://opentelemetry.io/docs/k8s-operator/automatic/) 방식으로 배포하였으며 다음과 같은 작업 필요.   
+> helm으로 otel operator 설치
+> Autoinstrumentation을 위한 crd(custom resource definition)설치
+> server 배포
+
+- client의 경우 opentelemetry.jar를 docker image에 추가하는 방식으로 진행.
+
+> autoinstrumentation과 docker build 중 택일 가능
+
 ```bash 
-helm upgrade -i redis-stack-server -f ./redis-stack-server/values.yaml ./redis-stack-server -n metric
-cd server
+# client application 배포
+cd client
 (sudo) ./gradlew jibDockerBuild
 kubectl apply -f ./kube.yaml
-cd ../client
+
+# server app 배포 전 opentelemetry autoinstrumentation을 위한 환경 셋팅
+cd ..
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm upgrade -i opentelemetry-operator open-telemetry/opentelemetry-operator -n metric --set admissionWebhooks.certManager.enabled=false --set admissionWebhooks.autoGenerateCert=true
+kubectl apply -f otel/crd.yaml
+
+# server application 배포
+cd server
 (sudo) ./gradlew jibDockerBuild
 kubectl apply -f ./kube.yaml
 ```
@@ -81,13 +98,13 @@ kubectl apply -f ./kube.yaml
 ### 04. application test
 
 ```bash
-kubectl port-forward svc/spring-client-entrypoint 8080:8080 -n metric
+kubectl port-forward svc/spring-client 8080:8080 -n metric
 ```
 
 another shell
 ```bash
 curl localhost:8080/call # 전체 조회
-curl "localhost:8080/call/one?name=redis" # 단건 조회. 응답 5초 지연
+curl "localhost:8080/call/one?name=microsoft" # 단건 조회. 응답 5초 지연
 curl "localhost:8080/call/404" # client -> server 호출 시 오류 페이지 조회. client에서는 not found 리턴
 ```
 
@@ -111,6 +128,9 @@ kubectl port-forward svc/grafana 7777:80 -n metric
 <img src="./static/loki.png">   
 
 - tempo -> url(http://tempo:3100)   
+- Service graph -> datasource에 prometheus 추가.   
+- 이 때 prometheus는 remote write(-- web.enable-remote-write-receiver)가 활성화되어 있어야 하고 tempo에서 service graph 기능(metricsGenerator)이 켜져야 한다.(각각 value.yaml 참고)   
+<img src="./static/tempo.png">    
 
 - prometheus -> url(http://prometheus-server)   
 - Exemplars -> tempo 추가   
@@ -119,3 +139,19 @@ kubectl port-forward svc/grafana 7777:80 -n metric
 ### 07. dashboard import
 - grafana -> dashboards -> new -> import
 - ./grafana/dashboard.json add
+
+
+### 08. 삭제
+
+```bash
+
+helm delete tempo -n metric
+helm delete promtail -n metric
+helm delete opentelemetry-operator -n metric
+helm delete loki -n metric
+helm delete grafana -n metric
+kubectl delete -f server/kube.yaml
+kubectl delete -f client/kube.yaml
+kubectl delete namespace metric
+
+```
