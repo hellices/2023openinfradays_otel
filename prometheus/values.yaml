@@ -6,32 +6,37 @@ server:
 # adds additional scrape configs to prometheus.yml
 # must be a string so you have to add a | after extraScrapeConfigs:
 # example adds prometheus-blackbox-exporter scrape config
-extraScrapeConfigs: |
-  - job_name: 'spring-sample'
-    metrics_path: '/'
-    scrape_interval: 5s
-    static_configs:
-    - targets: ['spring-server:9464','spring-client:9464']
+extraScrapeConfigs: |      
+  - job_name: 'kubernetes_pods'
+    kubernetes_sd_configs:
+    - role: pod
+
     relabel_configs:
-    - source_labels: [__address__]
-      regex: '(.*):(.*)'
-      replacement: '${1}'
-      target_label: app
-      
-  # - job_name: 'prometheus-blackbox-exporter'
-  #   metrics_path: /probe
-  #   params:
-  #     module: [http_2xx]
-  #   static_configs:
-  #     - targets:
-  #       - https://example.com
-  #   relabel_configs:
-  #     - source_labels: [__address__]
-  #       target_label: __param_target
-  #     - source_labels: [__param_target]
-  #       target_label: instance
-  #     - target_label: __address__
-  #       replacement: prometheus-blackbox-exporter:9115
+    # Scrape only pods with the annotation: prometheus.io/scrape = true
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+      action: keep
+      regex: true
+
+    # If prometheus.io/port is specified, scrape this port instead of the default
+    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+      target_label: __address__
+
+    # Include the pod namespace as a label for each metric
+    - source_labels: [__meta_kubernetes_namespace]
+      action: replace
+      target_label: kubernetes_namespace
+
+    # Include the pod name as a label for each metric
+    - source_labels: [__meta_kubernetes_pod_name]
+      action: replace
+      target_label: kubernetes_pod_name
+
+    # [Optional] Include all pod labels as labels for each metric
+    - action: labelmap
+      regex: __meta_kubernetes_pod_label_(.+)
 
 alertmanager:
   ## If false, alertmanager will not be installed

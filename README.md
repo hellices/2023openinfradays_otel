@@ -85,8 +85,9 @@ kubectl apply -f ./kube.yaml
 
 # server app 배포 전 opentelemetry autoinstrumentation을 위한 환경 셋팅
 cd ..
+kubectl create namespace otel
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-helm upgrade -i opentelemetry-operator open-telemetry/opentelemetry-operator -n metric --set admissionWebhooks.certManager.enabled=false --set admissionWebhooks.autoGenerateCert=true
+helm upgrade -i opentelemetry-operator open-telemetry/opentelemetry-operator -n otel --set admissionWebhooks.certManager.enabled=false --set admissionWebhooks.autoGenerateCert=true
 kubectl apply -f otel/crd.yaml
 
 # server application 배포
@@ -105,6 +106,8 @@ another shell
 ```bash
 curl localhost:8080/call # 전체 조회
 curl "localhost:8080/call/one?name=microsoft" # 단건 조회. 응답 5초 지연
+curl "localhost:8080/call/one?name=google" # 단건 조회. 응답 5초 지연
+curl "localhost:8080/call/abc" # 404 error
 curl "localhost:8080/call/404" # client -> server 호출 시 오류 페이지 조회. client에서는 not found 리턴
 ```
 

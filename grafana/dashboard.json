@@ -43,7 +43,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "9.5.2"
+      "version": "9.5.3"
     },
     {
       "type": "panel",
@@ -264,7 +264,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.5.2",
+      "pluginVersion": "9.5.3",
       "targets": [
         {
           "datasource": {
@@ -313,7 +313,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -394,7 +394,7 @@
           },
           "editorMode": "builder",
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum by(le, http_status_code) (rate(http_server_duration_bucket{app=~\"$app\"}[1m])))",
+          "expr": "histogram_quantile(0.9, sum by(le, http_status_code) (rate(http_server_duration_bucket{app=~\"$app\"}[5m])))",
           "range": true,
           "refId": "A"
         }
@@ -451,7 +451,7 @@
         "showUnfilled": true,
         "valueMode": "color"
       },
-      "pluginVersion": "9.5.2",
+      "pluginVersion": "9.5.3",
       "targets": [
         {
           "datasource": {
@@ -624,7 +624,7 @@
         "showUnfilled": true,
         "valueMode": "color"
       },
-      "pluginVersion": "9.5.2",
+      "pluginVersion": "9.5.3",
       "targets": [
         {
           "datasource": {
@@ -746,17 +746,17 @@
       "id": 28,
       "targets": [
         {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${DS_TEMPO}"
+          },
           "key": "Q-b980e049-f0b1-4394-b00f-b2803a70192f-0",
           "limit": 20,
           "query": "a22ad1c2286bc72e345ea9d29305bc55",
           "queryType": "serviceMap",
           "refId": "A",
           "serviceMapQuery": "{client=\"spring-client\"}",
-          "serviceName": "spring-client",
-          "datasource": {
-            "type": "tempo",
-            "uid": "${DS_TEMPO}"
-          }
+          "serviceName": "spring-client"
         }
       ],
       "title": "Flow chart",
@@ -853,8 +853,8 @@
       {
         "current": {
           "selected": false,
-          "text": "get",
-          "value": "get"
+          "text": "",
+          "value": ""
         },
         "description": "search log",
         "hide": 0,
@@ -863,11 +863,11 @@
         "options": [
           {
             "selected": true,
-            "text": "get",
-            "value": "get"
+            "text": "",
+            "value": ""
           }
         ],
-        "query": "get",
+        "query": "",
         "skipUrlSync": false,
         "type": "textbox"
       }
@@ -883,6 +883,6 @@
   "timezone": "",
   "title": "Opentelemetry Application APM",
   "uid": "54mJ9JUVk",
-  "version": 6,
+  "version": 2,
   "weekStart": ""
 }

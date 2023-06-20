@@ -13,8 +13,10 @@ spec:
       labels:
         app: spring-server
       annotations:
-        instrumentation.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/inject-java: "otel/otel-instrumentation"
         instrumentation.opentelemetry.io/container-names: "spring-server"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
     spec:
       containers:
       - name: spring-server

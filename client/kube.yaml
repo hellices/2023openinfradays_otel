@@ -12,6 +12,9 @@ spec:
     metadata:
       labels:
         app: spring-client
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
     spec:
       containers:
       - name: spring-client

@@ -1,8 +1,8 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
-  name: sample-instrumentation
-  namespace: metric
+  name: otel-instrumentation
+  namespace: otel
 spec:
   exporter:
     endpoint: http://tempo:4317
