@@ -16,3 +16,5 @@ spec:
     env:
       - name: OTEL_METRICS_EXPORTER
         value: prometheus
+      - name: OTEL_METRICS_EXEMPLAR_FILTER
+        value: always_on

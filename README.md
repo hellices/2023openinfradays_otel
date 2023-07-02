@@ -80,19 +80,19 @@ helm upgrade -i  -f tempo/values.yaml tempo grafana/tempo -n metric
 ```bash 
 # client application 배포
 cd client
-(sudo) ./gradlew jibDockerBuild
+sudo ./gradlew jibDockerBuild
 kubectl apply -f ./kube.yaml
 
 # server app 배포 전 opentelemetry autoinstrumentation을 위한 환경 셋팅
 cd ..
 kubectl create namespace otel
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-helm upgrade -i opentelemetry-operator open-telemetry/opentelemetry-operator -n otel --set admissionWebhooks.certManager.enabled=false --set admissionWebhooks.autoGenerateCert=true
+helm upgrade -i opentelemetry-operator open-telemetry/opentelemetry-operator -n otel --set admissionWebhooks.certManager.enabled=false --set admissionWebhooks.autoGenerateCert=true --wait
 kubectl apply -f otel/crd.yaml
 
 # server application 배포
 cd server
-(sudo) ./gradlew jibDockerBuild
+sudo ./gradlew jibDockerBuild
 kubectl apply -f ./kube.yaml
 ```
 
@@ -150,11 +150,14 @@ kubectl port-forward svc/grafana 7777:80 -n metric
 
 helm delete tempo -n metric
 helm delete promtail -n metric
-helm delete opentelemetry-operator -n metric
+helm delete prometheus -n metric
+helm delete opentelemetry-operator -n otel
 helm delete loki -n metric
 helm delete grafana -n metric
+kubectl delete -f otel/crd.yaml
 kubectl delete -f server/kube.yaml
 kubectl delete -f client/kube.yaml
+kubectl delete namespace otel
 kubectl delete namespace metric
 
 ```

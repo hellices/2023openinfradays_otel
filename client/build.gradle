@@ -41,10 +41,9 @@ jib {
     }
     container {
 		creationTime = "USE_CURRENT_TIMESTAMP" 
-		environment = [OTEL_TRACES_EXPORTER:"otlp,logging",OTEL_METRICS_EXPORTER:"prometheus",OTEL_RESOURCE_ATTRIBUTES:"app=spring-client",OTEL_METRICS_EXEMPLAR_FILTER:"ALWAYS_ON",OTEL_SERVICE_NAME:"spring-client",OTEL_EXPORTER_OTLP_ENDPOINT:"http://tempo:4317"]
-        jvmFlags = [
-			'-Dlogging.pattern.level=trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p',
+		jvmFlags = [
 			'-Dspring.profiles.active=server',
+			'-Dotel.javaagent.configuration-file=/otel.properties',
 			'-XX:+UseContainerSupport', 
 			'-javaagent:/opentelemetry-javaagent.jar',
 			'-Dfile.encoding=UTF-8']
