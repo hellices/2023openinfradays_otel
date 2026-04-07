@@ -1,8 +1,8 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.1.0'
-	id 'io.spring.dependency-management' version '1.1.0'
-    id 'com.google.cloud.tools.jib' version '3.2.1'
+	id 'org.springframework.boot' version '3.4.5'
+	id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.google.cloud.tools.jib' version '3.4.4'
 }
 
 group = 'com.otel'
@@ -34,7 +34,7 @@ tasks.named('test') {
 
 jib {
     from {
-        image = "registry.access.redhat.com/ubi8/openjdk-17:1.16-1"
+        image = "registry.access.redhat.com/ubi8/openjdk-17:1.21-3"
     }
     to {
         image = "spring-client"

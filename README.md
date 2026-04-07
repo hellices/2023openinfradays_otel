@@ -6,7 +6,7 @@
 <img src="./static/otel.drawio.svg" alt="" >   
 
 - server, client 두 개의 서비스를 기동하여 서비스 간 통신을 그라파나 대시보드를 통해 모니터링/디버깅하는 예제를 구성해 볼 수 있습니다.
-- 두 서버는 각각 [opentelemetry instrument](https://opentelemetry.io/docs/instrumentation/) sdk를 javaagent에 설정하여 기동합니다.
+- 두 서버는 각각 [opentelemetry instrument](https://opentelemetry.io/docs/zero-code/java/) sdk를 javaagent에 설정하여 기동합니다.
 - opentelemetry sdk(.jar)는 다음과 같은 역할을 수행합니다.
 1. metric을 노출시켜 prometheus에서 scraping 가능하도록 합니다.
 2. log 내에 trace_id를 보내줍니다.(java mdc - mapped diagnostic context 활용)
@@ -40,9 +40,9 @@
 
 - [prometheus](https://github.com/prometheus-community/helm-charts)
 - [grafana](https://github.com/grafana/helm-charts)
-- [loki single replica](https://grafana.com/docs/loki/latest/installation/helm/install-monolithic/)
-- [promtail](https://grafana.com/docs/loki/latest/clients/promtail/installation/)
-- [tempo](https://grafana.com/docs/tempo/latest/setup/helm-chart/)
+- [loki single replica](https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/)
+- [alloy](https://grafana.com/docs/alloy/latest/set-up/install/kubernetes/)
+- [tempo](https://grafana.com/docs/tempo/latest/set-up-for-tracing/setup-tempo/deploy/kubernetes/helm-chart/)
 
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -52,12 +52,12 @@ kubectl create namespace metric
 helm upgrade -i prometheus prometheus-community/prometheus -f ./prometheus/values.yaml -n metric
 helm upgrade -i  grafana grafana/grafana -n metric
 helm upgrade -i  -f loki/values.yaml loki grafana/loki -n metric
-helm upgrade -i  promtail grafana/promtail -n metric
+helm upgrade -i  alloy grafana/alloy -n metric
 helm upgrade -i  -f tempo/values.yaml tempo grafana/tempo -n metric
 
 ```
 > prometheus : cpu, memory 데이터 수집 + server_http_duration_bucket 과 exemplars 로 지연 api 확인 **metric 저장소**   
-> promtail + loki : promtail이 로그를 수집(logstash 또는 fluentd 대체 가능), loki에 저장(elasticsearch 등 대체 가능) **log 저장소**   
+> alloy + loki : alloy가 로그를 수집(promtail의 후속 제품), loki에 저장(elasticsearch 등 대체 가능) **log 저장소**   
 > tempo : 분산추적을 위한 저장소. (zipkin&jaeger 등으로 대체 가능) **trace 저장소**   
 > grafana : 위 세 종류의 telemetry를 조합하여 시각화.
 
@@ -68,7 +68,7 @@ helm upgrade -i  -f tempo/values.yaml tempo grafana/tempo -n metric
 - vs code -> extension -> [gradle for java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-gradle) 설치
 - [jib 빌드](https://github.com/GoogleContainerTools/jib)는 링크를 참고
 
-- server 는 [otel Autoinstrumentation](https://opentelemetry.io/docs/k8s-operator/automatic/) 방식으로 배포하였으며 다음과 같은 작업 필요.   
+- server 는 [otel Autoinstrumentation](https://opentelemetry.io/docs/platforms/kubernetes/operator/automatic/) 방식으로 배포하였으며 다음과 같은 작업 필요.   
 > helm으로 otel operator 설치
 > Autoinstrumentation을 위한 crd(custom resource definition)설치
 > server 배포
@@ -87,7 +87,7 @@ kubectl apply -f ./kube.yaml
 cd ..
 kubectl create namespace otel
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-helm upgrade -i opentelemetry-operator open-telemetry/opentelemetry-operator -n otel --set admissionWebhooks.certManager.enabled=false --set admissionWebhooks.autoGenerateCert=true --wait
+helm upgrade -i opentelemetry-operator open-telemetry/opentelemetry-operator -n otel --set admissionWebhooks.certManager.enabled=false --set admissionWebhooks.autoGenerateCert.enabled=true --wait
 kubectl apply -f otel/crd.yaml
 
 # server application 배포
@@ -149,7 +149,7 @@ kubectl port-forward svc/grafana 7777:80 -n metric
 ```bash
 
 helm delete tempo -n metric
-helm delete promtail -n metric
+helm delete alloy -n metric
 helm delete prometheus -n metric
 helm delete opentelemetry-operator -n otel
 helm delete loki -n metric
