@@ -1,0 +1,24 @@
+pyroscope:
+  replicationFactor: 1
+  components:
+    querier:
+      kind: Deployment
+      replicaCount: 1
+      resources: {}
+    distributor:
+      kind: Deployment
+      replicaCount: 1
+      resources: {}
+    ingester:
+      kind: StatefulSet
+      replicaCount: 1
+      resources: {}
+    compactor:
+      kind: StatefulSet
+      replicaCount: 1
+      resources: {}
+  storage:
+    backend: filesystem
+
+minio:
+  enabled: false

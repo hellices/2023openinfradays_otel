@@ -12,14 +12,26 @@
 2. log 내에 trace_id를 보내줍니다.(java mdc - mapped diagnostic context 활용)
 3. trace정보를 수집 가능한 서버로 전송합니다. 
 
+### OpenTelemetry 4대 신호 (Four Signals)
+> OpenTelemetry는 기존 Metrics, Logs, Traces 3가지 신호에서 **Profiling**을 추가하여 총 4가지 신호를 지원합니다(experimental).   
+> - **Metrics** : 시스템의 상태를 수치로 표현 (prometheus)   
+> - **Logs** : 애플리케이션 이벤트 기록 (loki)   
+> - **Traces** : 분산 시스템에서 요청의 흐름 추적 (tempo)   
+> - **Profiling** : CPU, 메모리 등 코드 레벨의 성능 분석 ([Grafana Pyroscope](https://grafana.com/docs/pyroscope/latest/))   
+>
+> eBPF(extended Berkeley Packet Filter)를 활용하면 애플리케이션 코드 변경 없이 커널 수준에서 전체 시스템을 프로파일링할 수 있습니다.   
+> - [OTel eBPF Instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation): 코드 변경 없이 k8s 노드 전체를 eBPF로 계측   
+
 ### 00. 프로젝트 구성
 | path       |  용도    |
 |------------|---------|
 | /client    | client application 빌드용 |
+| /ebpf      | OTel eBPF instrumentation helm chart value |
 | /grafana   | 대시보드 템플릿 |
 | /loki      | loki helm chart value |
 | /otel      | opentelemetry autoinstrumentation을 위한 custom resource definition |
 | /prometheus| prometheus helm chart value |
+| /pyroscope | pyroscope(continuous profiling) helm chart value |
 | /server    | server application 빌드용 |
 | /tempo     | tempo helm chart value |
 
@@ -43,10 +55,13 @@
 - [loki single replica](https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/)
 - [alloy](https://grafana.com/docs/alloy/latest/set-up/install/kubernetes/)
 - [tempo](https://grafana.com/docs/tempo/latest/set-up-for-tracing/setup-tempo/deploy/kubernetes/helm-chart/)
+- [pyroscope](https://grafana.com/docs/pyroscope/latest/deploy-kubernetes/helm/) *(continuous profiling - 4th OTel signal)*
+- [opentelemetry-ebpf-instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) *(zero-code eBPF 계측)*
 
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add grafana https://grafana.github.io/helm-charts
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 
 kubectl create namespace metric
 helm upgrade -i prometheus prometheus-community/prometheus -f ./prometheus/values.yaml -n metric
@@ -54,12 +69,16 @@ helm upgrade -i  grafana grafana/grafana -n metric
 helm upgrade -i  -f loki/values.yaml loki grafana/loki -n metric
 helm upgrade -i  alloy grafana/alloy -n metric
 helm upgrade -i  -f tempo/values.yaml tempo grafana/tempo -n metric
+helm upgrade -i  -f pyroscope/values.yaml pyroscope grafana/pyroscope -n metric
+helm upgrade -i  -f ebpf/values.yaml opentelemetry-ebpf-instrumentation open-telemetry/opentelemetry-ebpf-instrumentation -n metric
 
 ```
 > prometheus : cpu, memory 데이터 수집 + server_http_duration_bucket 과 exemplars 로 지연 api 확인 **metric 저장소**   
 > alloy + loki : alloy가 로그를 수집(promtail의 후속 제품), loki에 저장(elasticsearch 등 대체 가능) **log 저장소**   
 > tempo : 분산추적을 위한 저장소. (zipkin&jaeger 등으로 대체 가능) **trace 저장소**   
-> grafana : 위 세 종류의 telemetry를 조합하여 시각화.
+> pyroscope : 연속 프로파일링(CPU/메모리/코드 핫스팟) 저장소. **profile 저장소**   
+> grafana : 위 네 종류의 telemetry를 조합하여 시각화.   
+> opentelemetry-ebpf-instrumentation : 코드 변경 없이 eBPF로 전체 노드의 네트워크/성능 데이터를 수집하여 tempo/prometheus로 전송.
 
 ### 03. application deploy
 
@@ -139,6 +158,10 @@ kubectl port-forward svc/grafana 7777:80 -n metric
 - Exemplars -> tempo 추가   
 <img src="./static/prometheus.png">   
 
+- pyroscope -> url(http://pyroscope:4040)   
+- Grafana에서 Pyroscope 데이터소스 추가 후 flamegraph 대시보드를 통해 CPU/메모리 핫스팟 확인 가능   
+- [Pyroscope 데이터소스 문서](https://grafana.com/docs/grafana/latest/datasources/pyroscope/)
+
 ### 07. dashboard import
 - grafana -> dashboards -> new -> import
 - ./grafana/dashboard.json add
@@ -152,7 +175,9 @@ helm delete tempo -n metric
 helm delete alloy -n metric
 helm delete prometheus -n metric
 helm delete opentelemetry-operator -n otel
+helm delete opentelemetry-ebpf-instrumentation -n metric
 helm delete loki -n metric
+helm delete pyroscope -n metric
 helm delete grafana -n metric
 kubectl delete -f otel/crd.yaml
 kubectl delete -f server/kube.yaml

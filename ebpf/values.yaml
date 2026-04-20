@@ -1,0 +1,9 @@
+config:
+  create: true
+  data:
+    cluster_name: "local"
+env:
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://pyroscope.metric.svc.cluster.local:4317"
+  - name: OTEL_EXPORTER_OTLP_PROTOCOL
+    value: "grpc"
